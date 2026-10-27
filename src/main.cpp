@@ -126,19 +126,41 @@ int main() {
         // is between the two green lines (open space), in the soft exclusion zones (between the
         // green and red lines), or in the hard exclusion zones (beyond either of the red lines).
         //
+        float playerWindowX = camera.worldToWindowPercent(player.position).x;
+        float lineWorldX;
         // If the player is in the open zone, the camera does not need to move.
         //
         // If the player is in the soft exclusion zones, the camera should softly translate over
         // multiple frames (via an exponential moving average) until the player's center is aligned
         // with the violated soft boundary. Use SOFT_CAMERA_ALPHA for the alpha value.
         //
+        if (playerWindowX < SOFT_LIMIT_PERCENT)
+        {
+            lineWorldX = camera.windowPercentToWorld({SOFT_LIMIT_PERCENT, 0.0f}).x;
+            camera.translateWorld({SOFT_CAMERA_ALPHA*(player.position.x - lineWorldX), 0.0f});
+        }
+        else if (playerWindowX > 1.0f - SOFT_LIMIT_PERCENT)
+        {
+            lineWorldX = camera.windowPercentToWorld({1.0f - SOFT_LIMIT_PERCENT, 0.0f}).x;
+            camera.translateWorld({SOFT_CAMERA_ALPHA*(player.position.x -lineWorldX), 0.0f});
+        }
         // If the player is in the hard exclusion zones, the camera should hard-adjust so that
         // the player's center is always kept at most *at* the red lines. This means that the
         // player center must NEVER pass the red lines.
         //
+        playerWindowX = camera.worldToWindowPercent(player.position).x;
+        if (playerWindowX < HARD_LIMIT_PERCENT)
+        {
+            lineWorldX = camera.windowPercentToWorld({HARD_LIMIT_PERCENT, 0.0f}).x;
+            camera.translateWorld({player.position.x - lineWorldX, 0.0f});
+        }
+        else if (playerWindowX > 1.0f-HARD_LIMIT_PERCENT)
+        {
+            lineWorldX = camera.windowPercentToWorld({1.0f - HARD_LIMIT_PERCENT, 0.0f}).x;
+            camera.translateWorld({player.position.x - lineWorldX,0.0f});
+        }
         // Use SOFT_LIMIT_PERCENT and HARD_LIMIT_PERCENT to parameterize the green and red
         // line positions.
-        camera.setCameraCenter({player.position.x, WINDOW_HEIGHT * 0.5f});
 
         worldView.setCenter(camera.getCameraCenter());
         window.clear(sf::Color::Black);
